@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import to.msn.wings.locationapp.ui.theme.LocationAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -27,9 +28,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val viewModel: LocationViewModel = viewModel()
             LocationAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MyApp()
+                    MyApp(viewModel)
                 }
             }
         }
@@ -37,23 +39,27 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MyApp() {
+fun MyApp(viewModel: LocationViewModel) {
     val context = LocalContext.current
     val locationUtils = LocationUtils(context)
-    LocationDisplay(locationUtils =locationUtils, context = context)
+    LocationDisplay(locationUtils =locationUtils, viewModel = viewModel, context = context)
 }
 
 @Composable
 fun LocationDisplay(
     locationUtils: LocationUtils,
+    viewModel: LocationViewModel,
     context: Context
 ) {
+    val location = viewModel.location.value
+
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
         onResult = { permissions ->
             if (permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
                 && permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
 
+                locationUtils.requestLocationUpdates(viewModel = viewModel)
             } else {
                 val retionaleRequierd = ActivityCompat.shouldShowRequestPermissionRationale(
                     context as MainActivity,
@@ -78,10 +84,16 @@ fun LocationDisplay(
     Column(modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center) {
-        Text(text = "Location no available")
+
+        if (location != null) {
+            Text("Address: ${location.latitude} ${location.longitude}")
+        } else {
+            Text(text = "Location no available")
+        }
+
         Button(onClick = {
             if(locationUtils.hasLocationPermission(context)) {
-
+                locationUtils.requestLocationUpdates(viewModel)
             } else {
                 requestPermissionLauncher.launch(
                     arrayOf(
