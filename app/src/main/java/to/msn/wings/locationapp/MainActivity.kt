@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
 fun MyApp(viewModel: LocationViewModel) {
     val context = LocalContext.current
     val locationUtils = LocationUtils(context)
-    LocationDisplay(locationUtils =locationUtils, viewModel = viewModel, context = context)
+    LocationDisplay(locationUtils = locationUtils, viewModel = viewModel, context = context)
 }
 
 @Composable
@@ -52,6 +52,10 @@ fun LocationDisplay(
     context: Context
 ) {
     val location = viewModel.location.value
+
+    val address = location?.let {
+        locationUtils.reverseGeocodeLocation(location)
+    }
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
@@ -86,7 +90,7 @@ fun LocationDisplay(
         verticalArrangement = Arrangement.Center) {
 
         if (location != null) {
-            Text("Address: ${location.latitude} ${location.longitude}")
+            Text("Address: ${location.latitude} ${location.longitude} \n $address")
         } else {
             Text(text = "Location no available")
         }
